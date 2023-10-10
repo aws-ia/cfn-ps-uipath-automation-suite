@@ -500,7 +500,7 @@ Parameters:
       hyphens (-), underscores (_), periods (.), asterisks (*), single quotes ('),
       open parenthesis ((), close parenthesis ()), and forward slashes (/). End the
       prefix with a forward slash.
-    Default: aws-quickstart-sf/
+    Default: aws-ia-us-east-1-sf/
     Description: >-
       S3 key prefix that is used to simulate a folder for your copy of the
       deployment assets. Keep the default prefix unless you are customizing
@@ -792,13 +792,13 @@ Resources:
     Condition: GenerateSslCertificate
     Properties:
       TemplateURL: !Sub
-        - "https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}submodules/quickstart-aws-acm-certificate/templates/quickstart-aws-acm-certificate.template.yml"
+        - "https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}submodules/cfn-ps-aws-acm-certificate/templates/quickstart-aws-acm-certificate.template.yml"
         - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
           S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3BucketRegion: !Ref QSS3BucketRegion
-        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}submodules/quickstart-aws-acm-certificate/"
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}submodules/cfn-ps-aws-acm-certificate/"
         DomainName: !Ref UiPathFQDN
         HostedZoneID: !Ref HostedZoneID
         IamRoleArn: !Ref IamRoleArn
