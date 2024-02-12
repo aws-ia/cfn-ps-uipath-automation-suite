@@ -71,19 +71,19 @@ Parameters:
       letters, and hyphens (-). It cannot start or end with a hyphen (-).
     Description: Name of the S3 bucket for your copy of the Quick Start assets. Do not modify.
     Type: String
-    Default: uipath-s3-quickstart
+    Default: aws-ia
   QSS3KeyPrefix:
     AllowedPattern: '^[0-9a-zA-Z-/]*/$'
     ConstraintDescription: >-
       The Quick Start S3 key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), and forward slashes (/).
-    Default: aws-ia-sf/
+    Default: cfn-ps-uipath-automation-suite/
     Description: >-
       S3 key prefix that is used to simulate a directory for your copy of the
       Quick Start assets. Do not modify.
     Type: String
 Conditions:
-  UsingDefaultBucket: !Equals [!Ref QSS3BucketName, uipath-s3-quickstart]
+  UsingDefaultBucket: !Equals [!Ref QSS3BucketName, aws-ia]
   UsingSharedBucket: !Equals [!Ref UseSharedBucket, "true"]
   NotUsingSharedBucket: !Not [!Condition UsingSharedBucket]
   DeployDataServiceStorageBucket: !Equals [!Ref DataService, "true"]
