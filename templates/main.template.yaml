@@ -447,7 +447,7 @@ Parameters:
       name unless you are customizing the template. Changing the name updates code
       references to point to a new location.
     Type: String
-    Default: uipath-s3-quickstart
+    Default: aws-ia
   QSS3BucketRegion:
     Default: us-east-1
     Description: >-
@@ -465,7 +465,7 @@ Parameters:
       hyphens (-), underscores (_), periods (.), asterisks (*), single quotes ('),
       open parenthesis ((), close parenthesis ()), and forward slashes (/). End the
       prefix with a forward slash.
-    Default: aws-ia-us-east-1-sf/
+    Default: cfn-ps-uipath-automation-suite/
     Description: >-
       S3 key prefix that is used to simulate a folder for your copy of the
       deployment assets. Keep the default prefix unless you are customizing
@@ -484,7 +484,7 @@ Parameters:
 Conditions:
   UsingDefaultBucket: !Equals
     - !Ref QSS3BucketName
-    - uipath-s3-quickstart
+    - aws-ia
   3AZCondition: !Equals
     - !Ref NumberOfAZs
     - '3'
