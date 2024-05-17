@@ -10,9 +10,6 @@ Metadata:
         - W9002
         - W9003
         - W9006
-  QuickStartDocumentation:
-    EntrypointName: Launch into a new VPC
-    Order: "1"
   'AWS::CloudFormation::Interface':
     ParameterGroups:
       - Label:

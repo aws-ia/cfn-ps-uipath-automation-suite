@@ -10,9 +10,6 @@ Metadata:
         - W9006
         - E3030
   UnusedParameter: !Ref AcceptLicenseAgreement
-  QuickStartDocumentation:
-    EntrypointName: Launch into an existing VPC
-    Order: "1"
   'AWS::CloudFormation::Interface':
     ParameterGroups:
       - Label:

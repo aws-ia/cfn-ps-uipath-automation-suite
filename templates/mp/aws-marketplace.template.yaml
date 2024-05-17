@@ -11,9 +11,6 @@ Metadata:
         - W9006
         - E9010
   UnusedParameter: !Ref AcceptLicenseAgreement
-  QuickStartDocumentation:
-    EntrypointName: Launch from AWS marketplace
-    Order: "1"
   'AWS::CloudFormation::Interface':
     ParameterGroups:
       - Label:
