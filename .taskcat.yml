@@ -1,7 +1,7 @@
 project:
   name: cfn-ps-uipath-automation-suite
   parameters:
-    QSS3KeyPrefix: "quickstart-uipath-automation-suite/"
+    QSS3KeyPrefix: "cfn-ps-uipath-automation-suite/"
     QSS3BucketName: "$[taskcat_autobucket]"
     QSS3BucketRegion: "$[taskcat_current_region]"
     HostedZoneID: override
