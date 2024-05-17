@@ -2,6 +2,13 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: >-
   This template creates an Route53 Hosted zone and adds related record sets.
   (qs-1r2g4123h)
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W9002
+        - W9003
+        - W9004
 Parameters:
   VPCID:
     Type: 'AWS::EC2::VPC::Id'

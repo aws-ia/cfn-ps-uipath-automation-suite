@@ -1,5 +1,11 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: This template creates a cluster to provide high availability. (qs-1r2g4122s)
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W9002
+        - W9003
 Parameters:
   AgentAsgName:
     Type: String
@@ -62,7 +68,7 @@ Parameters:
       letters, and hyphens (-). It cannot start or end with a hyphen (-).
     Description: Name of the S3 bucket for your copy of the Quick Start assets. Do not modify.
     Type: String
-    Default: uipath-s3-quickstart
+    Default: aws-ia
   QSS3BucketRegion:
     Default: us-east-1
     Description: >-
@@ -75,7 +81,7 @@ Parameters:
     ConstraintDescription: >-
       The Quick Start S3 key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), and forward slashes (/).
-    Default: aws-quickstart-sf/
+    Default: cfn-ps-uipath-automation-suite/
     Description: >-
       S3 key prefix that is used to simulate a directory for your copy of the
       Quick Start assets. Do not modify.
@@ -90,7 +96,7 @@ Parameters:
 Conditions:
   UsingDefaultBucket: !Equals
     - !Ref QSS3BucketName
-    - uipath-s3-quickstart
+    - aws-ia
   IsMultiNode: !Equals [ !Ref IsMultiNode, 'true' ]
   IsAsRobotsDeployed: !Not [ !Equals [!Ref AsRobotsAsgName, ''] ]
   IsAsRobotsAndMultiNode: !And [!Condition IsMultiNode, !Condition IsAsRobotsDeployed]

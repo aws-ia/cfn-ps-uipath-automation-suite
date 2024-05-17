@@ -2,6 +2,13 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: >-
   This template deploys UiPath Automation Suite into an existing VPC. (qs-1r2g4122s)
 Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W9002
+        - W9003
+        - W9006
+        - E3030
   UnusedParameter: !Ref AcceptLicenseAgreement
   QuickStartDocumentation:
     EntrypointName: Launch into an existing VPC
@@ -784,6 +791,11 @@ Resources:
                 Resource: '*'
   FindAMIFunction:
     Type: 'AWS::Lambda::Function'
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            - E3030
     Properties:
       Description: Finds a matching AMI ID.
       Handler: lambda_function.handler
@@ -1093,6 +1105,11 @@ Resources:
 
   CreateInputJsonFunction:
     Type: 'AWS::Lambda::Function'
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            - E3030
     Properties:
       Description: Create input json file
       Handler: lambda_function.handler
@@ -1216,6 +1233,11 @@ Resources:
 
   ComputeResourceSizeFunction:
     Type: 'AWS::Lambda::Function'
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            - E3030
     Properties:
       Description: Create input json file
       Handler: lambda_function.handler

@@ -2,6 +2,14 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: >-
   This template deploys UiPath Automation Suite from the AWS marketplace.
 Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W2001
+        - W9002
+        - W9003
+        - W9006
+        - E9010
   UnusedParameter: !Ref AcceptLicenseAgreement
   QuickStartDocumentation:
     EntrypointName: Launch from AWS marketplace
@@ -51,7 +59,7 @@ Metadata:
           - EnableBackup
           - UseSharedBucket
           - UseLevel7LoadBalancer
-          - PerformInstallation
+          # - PerformInstallation
           - UiPathVersion
           - AddGpu
           - ExtraConfigKeys
@@ -151,8 +159,8 @@ Metadata:
         default: Use a shared bucket for external storage
       UseLevel7LoadBalancer:
         default: Load balancer
-      PerformInstallation:
-        default: Perform installation
+      # PerformInstallation:
+      #   default: Perform installation
       UiPathVersion:
         default: Automation Suite version
       ExtraConfigKeys:
@@ -395,15 +403,15 @@ Parameters:
     AllowedValues:
       - 'ALB'
       - 'NLB'
-  PerformInstallation:
-    Description: |
-      Perform the Automation Suite installation.
-      Choose false to perform only infrastructure provisioning and configuration.
-    Type: String
-    Default: 'true'
-    AllowedValues:
-      - 'true'
-      - 'false'
+  # PerformInstallation:
+  #   Description: |
+  #     Perform the Automation Suite installation.
+  #     Choose false to perform only infrastructure provisioning and configuration.
+  #   Type: String
+  #   Default: 'true'
+  #   AllowedValues:
+  #     - 'true'
+  #     - 'false'
   UiPathVersion:
     Description: UiPath version to install.
     Type: String

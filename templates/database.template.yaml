@@ -1,5 +1,12 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: This template creates a RDS SQL instance in private subnet. (qs-1r2g4124k)
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W9002
+        - W9003
+        - W9004
 Parameters:
   SubnetIDs:
     Description: Comma separated Subnet IDs where Gateway VMs need to be launched

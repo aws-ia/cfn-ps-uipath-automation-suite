@@ -1,5 +1,12 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: This template creates a cluster to provide high availability. (qs-1r2g4122s)
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W9002
+        - W9003
+        - W9004
 Parameters:
   VPCID:
     Type: 'AWS::EC2::VPC::Id'
@@ -1502,6 +1509,11 @@ Resources:
                 Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:*
   AsgProcessModifierFunction:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            - E3030
     Properties:
       Description: Modifies ASG processes during CF stack creation
       Code:

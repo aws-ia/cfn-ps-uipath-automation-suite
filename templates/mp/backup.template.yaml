@@ -1,6 +1,12 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
   This template creates a Multi-AZ, EFS file system and mount points (qs-1r2g4122s)
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W9002
+        - W9003
 Parameters:
   VPCCIDR:
     Description: CIDR block for the VPC

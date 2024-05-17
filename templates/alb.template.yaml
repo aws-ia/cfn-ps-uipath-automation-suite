@@ -1,6 +1,13 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
   This template creates an Application Load Balancer (qs-1r2g4122s)
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W9002
+        - W9003
+        - W9004
 Parameters:
   VPCID:
     Type: 'AWS::EC2::VPC::Id'

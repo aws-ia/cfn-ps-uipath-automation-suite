@@ -4,6 +4,12 @@ Description: >-
   Automation Suite deployed in private subnets, with a load balancer behind Amazon Route 53 in
   public subnets. (qs-1r2g4122s)
 Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W9002
+        - W9003
+        - W9006
   QuickStartDocumentation:
     EntrypointName: Launch into a new VPC
     Order: "1"

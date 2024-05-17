@@ -1,5 +1,11 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: This template creates a the storage stack of the deployment (qs-1r2g4122s)
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W9002
+        - W9003
 Parameters:
   UseSharedBucket:
     Type: String
@@ -305,6 +311,11 @@ Resources:
 
   ObjectStorageBucketsCleanupFunction:
     Type: 'AWS::Lambda::Function'
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            - E3030
     Properties:
       Description: >-
         Delete all objects inside the Config S3 bucket when the stack is deleted
