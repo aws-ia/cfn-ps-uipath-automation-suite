@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-  This template deploys UiPath Automation Suite from the AWS marketplace.
+  This template deploys UiPath Automation Suite from the AWS marketplace. (qs-1rah5ofp0)
 Metadata:
   cfn-lint:
     config:
