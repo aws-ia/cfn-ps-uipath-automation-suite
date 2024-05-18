@@ -83,7 +83,7 @@ Parameters:
     ConstraintDescription: >-
       The Quick Start S3 key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), and forward slashes (/).
-    Default: cfn-ps-uipath-automation-suite/
+    Default: quickstart-uipath-automation-suite/
     Description: >-
       S3 key prefix that is used to simulate a directory for your copy of the
       Quick Start assets. Do not modify.
@@ -324,7 +324,7 @@ Resources:
       Code:
         S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/EmptyS3Bucket/lambda.zip'
-      Runtime: python3.9
+      Runtime: python3.11
       Timeout: 900
       TracingConfig:
         Mode: Active

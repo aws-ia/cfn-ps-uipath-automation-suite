@@ -86,11 +86,20 @@ Parameters:
       S3 key prefix that is used to simulate a directory for your copy of the
       Quick Start assets. Do not modify.
     Type: String
+  IsMultiNode:
+    Description: AS deplpoymnet is HA
+    Type: String
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Default: 'true'
 Conditions:
   UsingDefaultBucket: !Equals
     - !Ref QSS3BucketName
     - aws-ia
-  IsMultiNode: !Not [ !Equals [ !Ref AgentAsgName, '' ] ]
+  IsMultiNode: !Equals [ !Ref IsMultiNode, 'true' ]
+  IsAsRobotsDeployed: !Not [ !Equals [!Ref AsRobotsAsgName, ''] ]
+  IsAsRobotsAndMultiNode: !And [!Condition IsMultiNode, !Condition IsAsRobotsDeployed]
   UseExternalOrch: !Equals [ !Ref UseExternalOrchestrator, 'true' ]
   DeployIam: !Equals [!Ref ExistingIamRole, 'false']
   DeployEventsBridgeRole: !And [!Condition IsMultiNode, !Condition DeployIam]
@@ -113,7 +122,7 @@ Resources:
 
   AsRobotsAsgLifeCycleHookTerminating:
     Type: 'AWS::AutoScaling::LifecycleHook'
-    Condition: IsMultiNode
+    Condition: IsAsRobotsAndMultiNode
     Properties:
       AutoScalingGroupName: !Ref AsRobotsAsgName
       LifecycleTransition: 'autoscaling:EC2_INSTANCE_TERMINATING'
@@ -164,10 +173,7 @@ Resources:
                 Resource:
                   - !Sub "arn:${AWS::Partition}:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${ServerAsgName}"
                   - !Sub "arn:${AWS::Partition}:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${AsRobotsAsgName}"
-                  - !If
-                    - IsMultiNode
-                    - !Sub "arn:${AWS::Partition}:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${AgentAsgName}"
-                    - !Ref AWS::NoValue
+                  - !Sub "arn:${AWS::Partition}:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${AgentAsgName}"
                 Effect: Allow
           PolicyName: allow-asg-instances-operations
         - PolicyDocument:
@@ -236,10 +242,7 @@ Resources:
                 Resource:
                   - !Sub "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:launch-template/${ServerLaunchTemplateName}"
                   - !Sub "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:launch-template/${ASRobotsLaunchTemplateName}"
-                  - !If
-                    - IsMultiNode
-                    - !Sub "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:launch-template/${AgentLaunchTemplateName}"
-                    - !Ref AWS::NoValue
+                  - !Sub "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:launch-template/${AgentLaunchTemplateName}"
                 Effect: Allow
           PolicyName: allow-launch-template-actions
         - PolicyDocument:
@@ -300,10 +303,7 @@ Resources:
                   - "ssm:StartautomationExecution"
                 Resource:
                   - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${ServerRemoveInstanceDocument}*
-                  - !If
-                    - IsMultiNode
-                    - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${AgentRemoveInstanceDocument}*
-                    - !Ref AWS::NoValue
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${AgentRemoveInstanceDocument}*
                 Effect: Allow
           PolicyName: startSsmExecution
         - PolicyDocument:
@@ -585,7 +585,7 @@ Resources:
                 Selector: $.Payload.firstServer
                 Type: String
             inputs:
-              Runtime: python3.8
+              Runtime: python3.11
               Handler: get_nodes_information
               InputPayload:
                 ServerAsgName: !Sub '${ServerAsgName}'
@@ -756,7 +756,7 @@ Resources:
             maxAttempts: 1
             onFailure: Abort
             inputs:
-              Runtime: python3.8
+              Runtime: python3.11
               Handler: update_ami_id
               InputPayload:
                 AmiId: '{{AmiId}}'

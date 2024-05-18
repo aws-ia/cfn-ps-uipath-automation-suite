@@ -19,6 +19,7 @@ Parameters:
   RDSPasswordSecretArn:
     Description: RDS DB password secret ARN
     Type: String
+    NoEcho: 'true'
   MultiAZ:
     Description: RDS instance deployment multi AZ availability
     Type: String

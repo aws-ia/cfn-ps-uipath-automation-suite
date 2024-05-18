@@ -22,6 +22,17 @@ Metadata:
           - PrivateSubnetIDs
           - DeployBastion
       - Label:
+          default: Automation Suite node configuration
+        Parameters:
+          - ServerInstanceType
+          - ServerInstanceCount
+          - AgentInstanceType
+          - AgentInstanceCount
+          - GpuInstanceType
+          - TmInstanceType
+          - ASRobotsInstanceType
+          - ASRobotsInstanceCount
+      - Label:
           default: Automation Suite instance configuration
         Parameters:
           - KeyPairName
@@ -32,7 +43,6 @@ Metadata:
       - Label:
           default: Automation Suite deployment configuration
         Parameters:
-          - MultiNode
           - EnableBackup
           - UseSharedBucket
           - UseLevel7LoadBalancer
@@ -42,6 +52,7 @@ Metadata:
           - AddGpu
           - ExtraConfigKeys
           - SelfSignedCertificateValidity
+          - DisablePresignedURL
       - Label:
           default: Automation Suite services
         Parameters:
@@ -58,6 +69,12 @@ Metadata:
           - TaskMining
           - ASRobots
           - ProcessMining
+      - Label:
+          default: Automation Suite external registry configuration
+        Parameters:
+          - ExternalRegistryFQDN
+          - ExternalRegistryUsername
+          - ExternalRegistryPassword
       - Label:
           default: Automation Suite external Orchestrator configuration
         Parameters:
@@ -98,6 +115,22 @@ Metadata:
         default: Private subnet IDs
       DeployBastion:
         default: Deploy bastion host
+      ServerInstanceType:
+        default: Server Instance Type
+      ServerInstanceCount:
+        default: Server Instance Count
+      AgentInstanceType:
+        default: Agent Instance Type
+      AgentInstanceCount:
+        default: Agent Instance Count
+      GpuInstanceType:
+        default: Gpu Agent Instance Type
+      TmInstanceType:
+        default: Task Mining Agent Instance Type
+      ASRobotsInstanceType:
+        default: AS Robots Agent Instance Type
+      ASRobotsInstanceCount:
+        default: AS Robots Agent Instance Count
       KeyPairName:
         default: Instance key pair
       AmiId:
@@ -108,8 +141,6 @@ Metadata:
         default: IAM role ARN
       IamRoleName:
         default: IAM role name
-      MultiNode:
-        default: Deployment type
       EnableBackup:
         default: Enable cluster backup
       UseSharedBucket:
@@ -127,7 +158,7 @@ Metadata:
       SelfSignedCertificateValidity:
         default: Validity of the self-signed certificate
       Orchestrator:
-        default: Orchsestrator
+        default: Orchestrator
       ActionCenter:
         default: Action Center
       AutomationHub:
@@ -164,6 +195,8 @@ Metadata:
         default: Base64 encoded Identity certificate
       AddGpu:
         default: Add GPU-enabled VMs
+      DisablePresignedURL:
+        default: Disable Presigned URL
       UiPathFQDN:
         default: Hosting FQDN
       HostedZoneID:
@@ -178,6 +211,12 @@ Metadata:
         default: AWS KMS key ID used to encrypt Amazon RDS storage
       AcmCertificateArn:
         default: ARN of the ACM-hosted certificate
+      ExternalRegistryFQDN:
+        default: External Registry Fully Qualified Domain Name
+      ExternalRegistryUsername:
+        default: External Registry user name
+      ExternalRegistryPassword:
+        default: External Registry password
       QSS3BucketName:
         default: Template-hosting S3 bucket
       QSS3KeyPrefix:
@@ -211,6 +250,104 @@ Parameters:
     Description: >-
       Choose the number of Availability Zones to use in the VPC. This number must match the number of zones selected in the Availability Zones parameter.
     Type: String
+  ServerInstanceType:
+    AllowedValues:
+      - 'c5.4xlarge'
+      - 'c5a.4xlarge'
+      - 'm5.4xlarge'
+      - 'm4.4xlarge'
+      - 'c5a.8xlarge'
+      - 'c5.9xlarge'
+      - 'c5.12xlarge'
+      - 'm5.8xlarge'
+      - 'm5a.8xlarge'
+      - 'm5a.4xlarge'
+    Default: 'c5.4xlarge'
+    Description: >-
+      Choose the node type for the Server node instances.
+    Type: String
+  ServerInstanceCount:
+    AllowedValues:
+      - '1'
+      - '3'
+      - '5'
+      - '7'
+      - '9'
+      - '11'
+      - '13'
+      - '15'
+    Default: '3'
+    Description: >-
+      Choose the number of nodes to be deployed as Server node instances.
+    Type: String
+  AgentInstanceType:
+    AllowedValues:
+      - 'c5.4xlarge'
+      - 'c5a.4xlarge'
+      - 'm5.4xlarge'
+      - 'm4.4xlarge'
+      - 'c5a.8xlarge'
+      - 'c5.9xlarge'
+      - 'm5.8xlarge'
+      - 'm5a.8xlarge'
+      - 'm5a.4xlarge'
+    Default: 'c5.4xlarge'
+    Description: >-
+      Choose the node type for the Agent node instances.
+    Type: String
+  AgentInstanceCount:
+    AllowedValues:
+      - '0'
+      - '1'
+      - '2'
+      - '3'
+      - '4'
+      - '5'
+    Default: '1'
+    Description: >-
+      Choose the number of nodes to be deployed as Agent node instances.
+    Type: String
+  GpuInstanceType:
+    AllowedValues:
+      - 'p3.2xlarge'
+      - 'g4dn.4xlarge'
+      - 'p2.xlarge'
+      - 'g5.4xlarge'
+    Default: 'p3.2xlarge'
+    Description: >-
+      Choose the node type for the Gpu Agent node instance.
+    Type: String
+  TmInstanceType:
+    AllowedValues:
+      - 'c5a.8xlarge'
+      - 'c5.9xlarge'
+      - 'c4.8xlarge'
+    Default: 'c4.8xlarge'
+    Description: >-
+      Choose the node type for the Task Mining Agent node instance.
+    Type: String
+  ASRobotsInstanceType:
+    AllowedValues:
+      - 'c5.4xlarge'
+      - 'c5a.4xlarge'
+      - 'm5.4xlarge'
+      - 'm5a.4xlarge'
+    Default: 'c5a.4xlarge'
+    Description: >-
+      Choose the node type for the AS Robots Agent node instances.
+    Type: String
+  ASRobotsInstanceCount:
+    AllowedValues:
+      - '0'
+      - '1'
+      - '2'
+      - '3'
+      - '4'
+      - '5'
+    Default: '1'
+    Description: >-
+      Choose the number of nodes to be deployed as AS Robots  Agent node instances.
+    Type: String
   KeyPairName:
     Description: Existing key pair to connect to virtual machine (VM) instances.
     Type: 'AWS::EC2::KeyPair::KeyName'
@@ -234,13 +371,6 @@ Parameters:
     Description: Name of a pre-deployed IAM Role with sufficient permissions for the deployment. Leave empty to create the role
     Type: String
     Default: ''
-  MultiNode:
-    Description: Install Automation Suite on a single node (recommended for evaluation/development purposes) or multinode (recommended for production purposes) environments.
-    Type: String
-    Default: 'Single Node'
-    AllowedValues:
-      - "Single Node"
-      - "Multi Node"
   EnableBackup:
     Description: Choose false to disable cluster backup.
     Type: String
@@ -274,9 +404,9 @@ Parameters:
   UiPathVersion:
     Description: UiPath version to install.
     Type: String
-    Default: '2022.10.2'
+    Default: '2023.10.1'
     AllowedValues:
-      - '2022.10.2'
+      - '2023.10.1'
   InstallerDownloadUrl:
     Description: Custom URL for installer download. Leave empty to use the UiPath version.
     Type: String
@@ -422,6 +552,14 @@ Parameters:
     AllowedValues:
       - 'true'
       - 'false'
+  DisablePresignedURL:
+    Description: >-
+      Choose true to enable or disable presigned URL.
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
   HostedZoneID:
     Description: ID of Amazon Route 53-hosted zone. Leave empty to pause the deployment once the load balancer was created and manually configure the DNS.
     Type: String
@@ -476,6 +614,20 @@ Parameters:
     Type: String
     Default: ""
     Description: AWS Key Management Service (AWS KMS) key II to encrypt Amazon RDS storage. Leave empty to skip encrypting Amazon RDS storage.
+  ExternalRegistryFQDN:
+    Type: String
+    Default: ""
+    Description: Fully qualified domain name for the external registry. Leave empty to not use an external registry.
+  ExternalRegistryUsername:
+    Type: String
+    Default: ""
+    NoEcho: 'true'
+    Description: User name used to connect to the external registry. Leave empty to not use an external registry.
+  ExternalRegistryPassword:
+    Type: String
+    Default: ""
+    NoEcho: 'true'
+    Description: Password used to connect to the external registry. Leave empty to not use an external registry.
   QSS3BucketName:
     AllowedPattern: '^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$'
     ConstraintDescription: >-
@@ -504,7 +656,7 @@ Parameters:
       hyphens (-), underscores (_), periods (.), asterisks (*), single quotes ('),
       open parenthesis ((), close parenthesis ()), and forward slashes (/). End the
       prefix with a forward slash.
-    Default: cfn-ps-uipath-automation-suite/
+    Default: quickstart-uipath-automation-suite/
     Description: >-
       S3 key prefix that is used to simulate a folder for your copy of the
       deployment assets. Keep the default prefix unless you are customizing
@@ -534,9 +686,10 @@ Conditions:
   DeployIam: !Or
     - !Equals ["", !Ref IamRoleArn]
     - !Equals ["", !Ref IamRoleName]
-  IsMultiNode: !Equals
-    - !Ref MultiNode
-    - "Multi Node"
+  IsMultiNode: !Not
+    -  !Equals
+      - !Ref ServerInstanceCount
+      - '1'
   UsingCustomUrl: !Not [!Equals [!Ref InstallerDownloadUrl, '']]
   IsBackupEnabled: !Equals [ !Ref EnableBackup, "true" ]
   IsProductionPM: !And
@@ -567,6 +720,36 @@ Conditions:
   DeployTaskMiningStorageBucket: !And
     - !Equals [!Ref TaskMining, "true"]
     - !Condition NotUsingSharedBucket
+Rules:
+  QSS3RegionInSupportedRegionsList:
+    Assertions:
+      - Assert: 
+          'Fn::Contains':
+            - [
+                "us-east-1",
+                "us-east-2",
+                "us-west-2",
+                "af-south-1",
+                "ap-east-1",
+                "ap-northeast-1",
+                "ap-northeast-2",
+                "ap-northeast-3",
+                "ap-south-1",
+                "ap-southeast-1",
+                "ap-southeast-2",
+                "ca-central-1",
+                "eu-central-1",
+                "eu-north-1",
+                "eu-south-1",
+                "eu-west-1",
+                "eu-west-2",
+                "eu-west-3",
+                "me-south-1",
+                "us-gov-east-1",
+                "us-gov-west-1"
+              ]
+            - !Ref QSS3BucketRegion
+        AssertDescription: 'Test the QSS3BucketRegion to be in the allowed region list'
 Resources:
   FindAmiLambdaRole:
     Type: 'AWS::IAM::Role'
@@ -598,7 +781,7 @@ Resources:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
-                Resource: !Sub 'arn:${AWS::Partition}:logs:*:*:*'
+                Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
               - Effect: Allow
                 Action:
                   - 'xray:PutTraceSegments'
@@ -617,7 +800,7 @@ Resources:
       Code:
         S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/FindAmi/lambda.zip'
-      Runtime: python3.9
+      Runtime: python3.11
       Timeout: 30
       TracingConfig:
         Mode: Active
@@ -635,7 +818,6 @@ Resources:
     Type: 'AWS::SecretsManager::Secret'
     Properties:
       Description: Org secret
-      SecretString: '{}'
   PlatformSecret:
     Type: 'AWS::SecretsManager::Secret'
     Properties:
@@ -676,7 +858,7 @@ Resources:
     Properties:
       TemplateURL: !Sub
         - >-
-          https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/routing.template.yaml
+          https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/mp/routing.template.yaml
         - S3Bucket: !If
             - UsingDefaultBucket
             - !Sub '${QSS3BucketName}-${AWS::Region}'
@@ -704,7 +886,7 @@ Resources:
     Properties:
       TemplateURL: !Sub
         - >-
-          https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/external-storage.template.yaml
+          https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/mp/external-storage.template.yaml
         - S3Bucket: !If
             - UsingDefaultBucket
             - !Sub '${QSS3BucketName}-${AWS::Region}'
@@ -732,7 +914,7 @@ Resources:
     Properties:
       TemplateURL: !Sub
         - >-
-          https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/server.template.yaml
+          https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/mp/server.template.yaml
         - S3Bucket: !If
             - UsingDefaultBucket
             - !Sub '${QSS3BucketName}-${AWS::Region}'
@@ -759,14 +941,17 @@ Resources:
         KeyPairName: !Ref KeyPairName
         AmiId: !Ref AmiId
         GpuAmiId: !Ref GpuAmiId
-        InstanceType: !GetAtt ComputeResourceSize.InstanceType
-        ASRobotsInstanceType: !GetAtt ComputeResourceSize.ASRobotsInstanceType
+        ServerInstanceType: !Ref ServerInstanceType
+        AgentInstanceType: !Ref AgentInstanceType
+        ASRobotsInstanceType: !Ref ASRobotsInstanceType
+        ASRobotsInstanceCount: !Ref ASRobotsInstanceCount
+        TmInstanceType: !Ref TmInstanceType
+        GpuInstanceType: !Ref GpuInstanceType
         ServerDiskSize: !GetAtt ComputeResourceSize.ServerDiskSize
-        TmInstanceType: !GetAtt ComputeResourceSize.TmInstanceType
-        GpuInstanceType: !GetAtt ComputeResourceSize.GpuInstanceType
-        ServerInstanceCount: !GetAtt ComputeResourceSize.ServerInstanceCount
-        AgentInstanceCount: !GetAtt ComputeResourceSize.AgentInstanceCount
-        MultiNode: !Ref MultiNode
+        ServerInstanceCount: !Ref ServerInstanceCount
+        AgentInstanceCount: !Ref AgentInstanceCount
+        IamRoleArn: !Ref IamRoleArn
+        IamRoleName: !Ref IamRoleName
         PerformInstallation: !Ref PerformInstallation
         FindAMIFunctionArn: !GetAtt
           - FindAMIFunction
@@ -794,7 +979,9 @@ Resources:
         DocumentUnderstandingStorageBucket: !If [DeployDocumentUnderstandingStorageBucket, !GetAtt ExternalStorageStack.Outputs.DocumentUnderstandingStorageBucket, '']
         TaskMiningStorageBucket: !If [DeployTaskMiningStorageBucket, !GetAtt ExternalStorageStack.Outputs.TaskMiningStorageBucket, '']
         ProcessMiningStorageBucket: !If [DeployProcessMiningStorageBucket, !GetAtt ExternalStorageStack.Outputs.ProcessMiningStorageBucket, '']
-
+        ExternalRegistryFQDN: !Ref ExternalRegistryFQDN
+        ExternalRegistryUsername: !Ref ExternalRegistryUsername
+        ExternalRegistryPassword: !Ref ExternalRegistryPassword
 
   ConfigureSSLStack:
     Type: AWS::CloudFormation::Stack
@@ -817,7 +1004,7 @@ Resources:
     Properties:
       TemplateURL: !Sub
         - >-
-          https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/database.template.yaml
+          https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/mp/database.template.yaml
         - S3Bucket: !If
             - UsingDefaultBucket
             - !Sub '${QSS3BucketName}-${AWS::Region}'
@@ -843,7 +1030,7 @@ Resources:
     Properties:
       TemplateURL: !Sub
         - >-
-          https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/backup.template.yaml
+          https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/mp/backup.template.yaml
         - S3Bucket: !If
             - UsingDefaultBucket
             - !Sub '${QSS3BucketName}-${AWS::Region}'
@@ -900,7 +1087,7 @@ Resources:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
-                Resource: !Sub 'arn:${AWS::Partition}:logs:*:*:*'
+                Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
               - Effect: Allow
                 Action:
                   - 'xray:PutTraceSegments'
@@ -927,7 +1114,7 @@ Resources:
       Code:
         S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/CreateInputJson/lambda.zip'
-      Runtime: python3.9
+      Runtime: python3.11
       Timeout: 30
       TracingConfig:
         Mode: Active
@@ -951,7 +1138,6 @@ Resources:
       PMRDSDBInstanceEndpointAddress: !GetAtt
         - DatabaseStack
         - Outputs.PMRDSDBInstanceEndpointAddress
-      MultiNode: !Ref MultiNode
       KubeLoadBalancerDns: !GetAtt
         - RoutingStack
         - Outputs.KubeLoadBalancerDns
@@ -974,8 +1160,10 @@ Resources:
       OrchestratorCertificate: !Ref OrchestratorCertificate
       IdentityCertificate: !Ref IdentityCertificate
       AddGpu: !Ref AddGpu
-      ServerInstanceCount: !GetAtt ComputeResourceSize.ServerInstanceCount
-      AgentInstanceCount: !GetAtt ComputeResourceSize.AgentInstanceCount
+      DisablePresignedURL: !Ref DisablePresignedURL
+      CloudPartition: !Ref "AWS::Partition"
+      ServerInstanceCount: !Ref ServerInstanceCount
+      AgentInstanceCount: !Ref AgentInstanceCount
       PrivateSubnetIDs: !Join [",", !Ref PrivateSubnetIDs]
       ExtraConfigKeys: !Ref ExtraConfigKeys
       SelfSignedCertificateValidity: !Ref SelfSignedCertificateValidity
@@ -1018,13 +1206,23 @@ Resources:
                   - 'ec2:DescribeInstances'
                   - 'ec2:DescribeInstanceTypeOfferings'
                   - 'ec2:DescribeInstanceTypes'
+                  - 'ec2:DescribeImages'
                 Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'ec2:RunInstances'
+                  - 'ec2:CreateTags'
+                Resource: !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:*'
+              - Effect: Allow
+                Action:
+                  - 'cloudformation:DescribeStacks'
+                Resource: !Sub 'arn:${AWS::Partition}:cloudformation:${AWS::Region}:*'
               - Effect: Allow
                 Action:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
-                Resource: !Sub 'arn:${AWS::Partition}:logs:*:*:*'
+                Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
               - Effect: Allow
                 Action:
                   - 'xray:PutTraceSegments'
@@ -1044,7 +1242,7 @@ Resources:
       Code:
         S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/ComputeResourceSize/lambda.zip'
-      Runtime: python3.9
+      Runtime: python3.11
       Timeout: 30
       TracingConfig:
         Mode: Active
@@ -1053,8 +1251,11 @@ Resources:
     Type: 'Custom::ComputeResourceSize'
     Properties:
       ServiceToken: !GetAtt ComputeResourceSizeFunction.Arn
+      ServerInstanceType: !Ref ServerInstanceType
+      AgentInstanceType: !Ref AgentInstanceType
+      ServerInstanceCount: !Ref ServerInstanceCount
+      AgentInstanceCount: !Ref AgentInstanceCount
       RegionName: !Ref 'AWS::Region'
-      MultiNode: !Ref MultiNode
       Orchestrator: !Ref Orchestrator
       ActionCenter: !Ref ActionCenter
       AutomationHub: !Ref AutomationHub
@@ -1069,25 +1270,32 @@ Resources:
       ProcessMining: !Ref ProcessMining
       ASRobots: !Ref ASRobots
       AddGpu: !Ref AddGpu
+      AmiId: !Ref AmiId
+      GpuAmiId: !Ref GpuAmiId
+      ASRobotsInstanceType: !Ref ASRobotsInstanceType
+      ASRobotsInstanceCount: !Ref ASRobotsInstanceCount
+      TmInstanceType: !Ref TmInstanceType
+      GpuInstanceType: !Ref GpuInstanceType
+      PrivateSubnetIDs: !Join [",", !Ref PrivateSubnetIDs]
+      StackName: !Ref AWS::StackName
+      KeyPairName: !Ref KeyPairName
 
   InputJsonSecret:
     Type: 'AWS::SecretsManager::Secret'
     Properties:
       Description: Input Json file for the deployment
-      SecretString: '{}'
 
   KubeconfigSecret:
     Type: 'AWS::SecretsManager::Secret'
     Properties:
       Description: The deployment kubeconfig file
-      SecretString: '{}'
 
   ManagementStack:
     Type: 'AWS::CloudFormation::Stack'
     Properties:
       TemplateURL: !Sub
         - >-
-          https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/ec2-management.template.yaml
+          https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/mp/ec2-management.template.yaml
         - S3Bucket: !If
             - UsingDefaultBucket
             - !Sub '${QSS3BucketName}-${AWS::Region}'
@@ -1110,6 +1318,7 @@ Resources:
         InstanceIamRoleArn: !GetAtt ServerStack.Outputs.InstanceIamRoleArn
         ExistingIamRole: !If [DeployIam, 'false', 'true']
         UseExternalOrchestrator: !Ref UseExternalOrchestrator
+        IsMultiNode: !If [IsMultiNode, "true", "false"]
         QSS3BucketName: !Ref QSS3BucketName
         QSS3BucketRegion: !Ref QSS3BucketRegion
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
@@ -1140,3 +1349,12 @@ Outputs:
   ClusterAdministrationURL:
     Description: The Unified UI for Cluster management page.
     Value: !Sub "https://${UiPathFQDN}/uipath-management/"
+  GrafanaMonitoringURL: 
+    Description: The dashboard monitoring URL (Grafana)
+    Value: !Sub "https://monitoring.${UiPathFQDN}/dashboard"
+  PrometheusMonitoringURL: 
+    Description: The metrics monitoring URL (Prometheus)
+    Value: !Sub "https://monitoring.${UiPathFQDN}/metrics"
+  AlertmanagerMonitoringURL: 
+    Description: The Alert Manager Monitoring URL
+    Value: !Sub "https://monitoring.${UiPathFQDN}/alertmanager"

@@ -56,7 +56,7 @@ Parameters:
 Conditions:
   UsingDefaultBucket: !Equals
     - !Ref QSS3BucketName
-    - uipath-s3-quickstart
+    - aws-ia
   UsingAlb: !Equals
     - !Ref UseLevel7LoadBalancer
     - "ALB"
@@ -70,6 +70,10 @@ Conditions:
   NotCreatingDnsRecords: !Not [!Condition CreatingDnsRecords]
   NotCreatingDnsRecords&&UsingNlb: !And [!Condition NotCreatingDnsRecords, !Condition UsingNlb]
   NotCreatingDnsRecords&&UsingAlb: !And [!Condition NotCreatingDnsRecords, !Condition UsingAlb]
+  IsUsGovCloud: !Equals [!Ref "AWS::Partition", 'aws-us-gov']
+  CreateDNSRecordCommercialCloud: !And [ !Condition CreatingDnsRecords, !Not [ !Condition IsUsGovCloud]]
+  CreateDNSRecordGovCloudALB: !And [ !Condition CreatingDnsRecords, !Condition IsUsGovCloud, !Condition UsingAlb]
+  CreateDNSRecordGovCloudNLB: !And [ !Condition CreatingDnsRecords, !Condition IsUsGovCloud, !Condition UsingNlb]
 Resources:
   AlbStack:
     Type: 'AWS::CloudFormation::Stack'
@@ -77,7 +81,7 @@ Resources:
     Properties:
       TemplateURL: !Sub
         - >-
-          https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/alb.template.yaml
+          https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/mp/alb.template.yaml
         - S3Bucket: !If
             - UsingDefaultBucket
             - !Sub '${QSS3BucketName}-${AWS::Region}'
@@ -99,7 +103,7 @@ Resources:
     Properties:
       TemplateURL: !Sub
         - >-
-          https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/nlb.template.yaml
+          https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/mp/nlb.template.yaml
         - S3Bucket: !If
             - UsingDefaultBucket
             - !Sub '${QSS3BucketName}-${AWS::Region}'
@@ -169,7 +173,7 @@ Resources:
 
   RootRecordSet:
     Type: 'AWS::Route53::RecordSet'
-    Condition: CreatingDnsRecords
+    Condition: CreateDNSRecordCommercialCloud
     Properties:
       HostedZoneId: !Ref HostedZoneID
       Name: !Join
@@ -197,7 +201,7 @@ Resources:
             - Outputs.CanonicalHostedZoneID
   SubdomainRecordSet:
     Type: 'AWS::Route53::RecordSet'
-    Condition: CreatingDnsRecords
+    Condition: CreateDNSRecordCommercialCloud
     Properties:
       HostedZoneId: !Ref HostedZoneID
       Name: !Ref Fqdn
@@ -220,6 +224,55 @@ Resources:
           - !GetAtt
             - NlbStack
             - Outputs.CanonicalHostedZoneID
+
+  RootRecordSetGovALB:
+    Type: 'AWS::Route53::RecordSet'
+    Condition: CreateDNSRecordGovCloudALB
+    Properties:
+      HostedZoneId: !Ref HostedZoneID
+      Name: !Join
+        - ''
+        - - "*."
+          - !Ref Fqdn
+      Type: CNAME
+      TTL: 900
+      ResourceRecords:  [ !GetAtt [ AlbStack , Outputs.ExternalLoadBalancerDns ] ]
+            
+  SubdomainRecordSetGovALB:
+    Type: 'AWS::Route53::RecordSet'
+    Condition: CreateDNSRecordGovCloudALB
+    Properties:
+      HostedZoneId: !Ref HostedZoneID
+      Name: !Ref Fqdn
+      Type: CNAME
+      TTL: 900
+      ResourceRecords: [ !GetAtt [ AlbStack , Outputs.ExternalLoadBalancerDns ] ]
+            
+  RootRecordSetGovNLB:
+    Type: 'AWS::Route53::RecordSet'
+    Condition: CreateDNSRecordGovCloudNLB
+    Properties:
+      HostedZoneId: !Ref HostedZoneID
+      Name: !Join
+        - ''
+        - - "*."
+          - !Ref Fqdn
+      Type: CNAME
+      TTL: 900
+      ResourceRecords: [ !GetAtt [ NlbStack , Outputs.ExternalLoadBalancerDns ] ]
+            
+  SubdomainRecordSetGovNLB:
+    Type: 'AWS::Route53::RecordSet'
+    Condition: CreateDNSRecordGovCloudNLB
+    Properties:
+      HostedZoneId: !Ref HostedZoneID
+      Name: !Ref Fqdn
+      Type: CNAME
+      TTL: 900
+      ResourceRecords: [ !GetAtt [ NlbStack , Outputs.ExternalLoadBalancerDns ] ]
+            
+            
+            
 
   NlbWaitHandle:
     DependsOn: NlbStack
@@ -264,3 +317,20 @@ Outputs:
 
   KubeLoadBalancerDns:
     Value: !GetAtt KubeLoadBalancer.DNSName
+
+  IsUsGovCloudPartition: 
+    Value: !Ref "AWS::Partition"
+    Condition: IsUsGovCloud
+
+  CreateDNSRecords: 
+    Value: "create dns records TRUE"
+    Condition: CreatingDnsRecords
+
+  UsingNLB: 
+    Value: "using NLB"
+    Condition: UsingNlb
+  
+  UsingAlb:
+    Value: "Using ALB"
+    Condition: UsingAlb
+  

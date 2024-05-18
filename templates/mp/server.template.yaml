@@ -42,8 +42,11 @@ Parameters:
       Leave empty to determine automatically the AMI to use.
     Type: String
     Default: ''
-  InstanceType:
-    Description: Node Instance type
+  ServerInstanceType:
+    Description: Server Node Instance type
+    Type: String
+  AgentInstanceType:
+    Description: Agent Node Instance type
     Type: String
   TmInstanceType:
     Description: Task Mining node Instance type
@@ -51,19 +54,15 @@ Parameters:
   ASRobotsInstanceType:
     Description: Automation Suite Robots nodes Instance type
     Type: String
+  ASRobotsInstanceCount:
+    Description: The number of nodes to be deployed as AS Robots Agent node instances.
+    Type: String
   GpuInstanceType:
     Description: Gpu node Instance type
     Type: String
   ServerDiskSize:
     Description: Server instances disk size
     Type: Number
-  MultiNode:
-    Description: Create a highly available deployment or a single node.
-    Type: String
-    Default: 'Multi Node'
-    AllowedValues:
-      - "Single Node"
-      - "Multi Node"
   PerformInstallation:
     Description: Perform the Service Fabric installation
     Type: String
@@ -135,6 +134,20 @@ Parameters:
     Description: Name of a pre-deployed IAM Role with sufficient permissions for the deployment. Leave empty to create the role
     Type: String
     Default: ''
+  ExternalRegistryFQDN:
+    Type: String
+    Default: ""
+    Description: Fully qualified domain name for the external registry. Leave empty to not use an external registry.
+  ExternalRegistryUsername:
+    Type: String
+    Default: ""
+    NoEcho: 'true'
+    Description: User name used to connect to the external registry. Leave empty to not use an external registry.
+  ExternalRegistryPassword:
+    Type: String
+    Default: ""
+    NoEcho: 'true'
+    Description: Password used to connect to the external registry. Leave empty to not use an external registry.
   QSS3BucketName:
     Type: String
     Description: Name of bucket storing the quickstart files
@@ -147,6 +160,7 @@ Parameters:
   InputJsonSecretArn:
     Description: ARN of Secret where the input json file is located
     Type: String
+    NoEcho: 'true'
   KubeconfigSecretArn:
     Description: ARN of Secret where the kubeconfig file is stored
     Type: String
@@ -200,10 +214,11 @@ Parameters:
 Conditions:
   UsingDefaultBucket: !Equals
     - !Ref QSS3BucketName
-    - uipath-s3-quickstart
-  IsMultiNode: !Equals
-    - !Ref MultiNode
-    - "Multi Node"
+    - aws-ia
+  IsMultiNode: !Not
+    - !Equals
+      - !Ref ServerInstanceCount
+      - '1'
   IsPerformingInstallation: !Equals
     - !Ref PerformInstallation
     - "true"
@@ -219,12 +234,16 @@ Conditions:
   DeployingGpu: !Equals
     - !Ref AddGpu
     - "true"
+  IsUsGovCloud: !Equals [!Ref "AWS::Partition", 'aws-us-gov']
+  IsCommercialCloud: !Not [!Condition IsUsGovCloud]
   FindingAmiAtDeploy: !Equals
     - !Ref AmiId
     - ''
   FindingGpuAmiAtDeploy: !Equals
     - !Ref GpuAmiId
     - ''
+  FindingAmiAtDeployCommercialCloud: !And [!Condition FindingAmiAtDeploy, !Condition IsCommercialCloud]
+  FindingAmiAtDeployUsGovCloud: !And [!Condition FindingAmiAtDeploy, !Condition IsUsGovCloud]
   UsingPublicSubnets: !Not [!Equals ['', !Join ["", !Ref PublicSubnetIDs]]]
   DeployingBastion: !And
     - !Equals [!Ref DeployBastion, 'true']
@@ -293,6 +312,10 @@ Resources:
           FromPort: 30000
           ToPort: 32767
           CidrIp: !Ref VPCCIDR
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: !Ref VPCCIDR
         - IpProtocol: udp
           FromPort: 8472
           ToPort: 8472
@@ -303,18 +326,18 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/InstanceAMIImageName"
       Type: String
-      Value: RHEL-8.6*_HVM-20*
+      Value: RHEL-8.7*_HVM-20*
       Description: SSM Parameter for storing the Image Name of the AMI used in the ASGs.
   InstanceAmiId:
     Type: AWS::SSM::Parameter
     Properties:
       Name: !Sub "/${AWS::StackName}/InstanceAmiId"
       Type: String
-      Value: !If [FindingAmiAtDeploy, !GetAtt InstanceAMI.ImageId, !Ref AmiId]
+      Value: !If [FindingAmiAtDeploy, !If [IsCommercialCloud, !GetAtt InstanceAMICommercial.ImageId, !GetAtt InstanceAMIGov.ImageId], !Ref AmiId]
       Description: SSM Parameter for storing the AMI used in the ASGs.
-  InstanceAMI:
+  InstanceAMICommercial:
     Type: 'Custom::InstanceAMI'
-    Condition: FindingAmiAtDeploy
+    Condition: FindingAmiAtDeployCommercialCloud
     Properties:
       ServiceToken: !Ref FindAMIFunctionArn
       RegionName: !Ref 'AWS::Region'
@@ -322,16 +345,36 @@ Resources:
       Architecture: x86_64
       VirtualizationType: hvm
       Owners: '309956199498'
-  GpuInstanceAMI:
+  GpuInstanceAMICommercial:
     Type: 'Custom::InstanceAMI'
-    Condition: FindingGpuAmiAtDeploy
+    Condition: FindingAmiAtDeployCommercialCloud
     Properties:
       ServiceToken: !Ref FindAMIFunctionArn
       RegionName: !Ref 'AWS::Region'
-      ImageName: RHEL-8.6*_HVM-20*
+      ImageName: RHEL-8.7*_HVM-20*
       Architecture: x86_64
       VirtualizationType: hvm
       Owners: '309956199498'
+  InstanceAMIGov:
+    Type: 'Custom::InstanceAMI'
+    Condition: FindingAmiAtDeployUsGovCloud
+    Properties:
+      ServiceToken: !Ref FindAMIFunctionArn
+      RegionName: !Ref 'AWS::Region'
+      ImageName: !Sub '{{resolve:ssm:${InstanceAMIImageName}}}'
+      Architecture: x86_64
+      VirtualizationType: hvm
+      Owners: '219670896067'
+  GpuInstanceAMIGov:
+    Type: 'Custom::InstanceAMI'
+    Condition: FindingAmiAtDeployUsGovCloud
+    Properties:
+      ServiceToken: !Ref FindAMIFunctionArn
+      RegionName: !Ref 'AWS::Region'
+      ImageName: RHEL-8.7*_HVM-20*
+      Architecture: x86_64
+      VirtualizationType: hvm
+      Owners: '219670896067'
   ServiceFabricIamRole:
     Type: 'AWS::IAM::Role'
     Condition: DeployIam
@@ -394,11 +437,11 @@ Resources:
               - autoscaling:CompleteLifecycleAction
             Resource:
               - !Sub "arn:${AWS::Partition}:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${ServerAutoScalingGroup}"
+              - !Sub "arn:${AWS::Partition}:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${AgentAutoScalingGroup}"
               - !If
-                - IsMultiNode
-                - !Sub "arn:${AWS::Partition}:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${AgentAutoScalingGroup}"
+                - IsASRobotsProduction
+                - !Sub "arn:${AWS::Partition}:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${ASRobotsAutoScalingGroup}"
                 - !Ref AWS::NoValue
-              - !Sub "arn:${AWS::Partition}:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${ASRobotsAutoScalingGroup}"
             Effect: Allow
       PolicyName: LifecycleHookActionsPolicy
       Roles:
@@ -627,7 +670,12 @@ Resources:
             /root/download-sf-installer.sh:
               content: !Sub |
                 #!/bin/bash -x
-                wget "$(/usr/local/bin/aws ssm get-parameter --name "${InstallerDownloadUrlParameterName}" | jq -r '.Parameter.Value')" -O /root/sf-installer.zip
+                URL="$(/usr/local/bin/aws ssm get-parameter --name "${InstallerDownloadUrlParameterName}" | jq -r '.Parameter.Value')"
+                if [ "$URL" == "marketplace" ]; then
+                  echo "NoASPackageDownload"
+                else
+                  wget "$URL" -O /root/sf-installer.zip
+                fi
               owner: "root"
               group: "root"
               mode: "00700"
@@ -650,6 +698,8 @@ Resources:
               command: chmod -R +r,+w,+x /root/installer/*
             04_download_input:
               command: !Sub /usr/local/bin/aws secretsmanager get-secret-value --secret-id "${InputJsonSecretArn}" | jq '.SecretString | fromjson' > /root/installer/input.json
+            05_set_rp_filter:
+              command: sysctl -w net.ipv4.conf.all.rp_filter=0 && sudo echo 'net.ipv4.conf.all.rp_filter=0' >>  /etc/sysctl.conf
         install_server:
           files:
             /root/install-server.sh:
@@ -670,6 +720,16 @@ Resources:
                   "prefix": "asbackup",
                   "schedule": "*/45 * * * *",
                   "retention": "72h"
+                }
+              owner: "root"
+              group: "root"
+              mode: "000700"
+            /root/installer/externalRepo.json:
+              content: !Sub |
+                {
+                  "FQDN": "${ExternalRegistryFQDN}",
+                  "username": "${ExternalRegistryUsername}",
+                  "password": "${ExternalRegistryPassword}"
                 }
               owner: "root"
               group: "root"
@@ -699,6 +759,8 @@ Resources:
                 - DeployingGpu
                 - /root/installer/configureUiPathAS.sh gpu enable
                 - echo "There are no nodes with GPU in cluster"
+            04_reupload_cluster_config:
+              command: !Sub /usr/local/bin/aws secretsmanager put-secret-value --secret-id "${InputJsonSecretArn}" --secret-string file:///root/installer/input.json
         cloudwatch_agent_setup:
           files:
             /tmp/amazon-cloudwatch-agent.rpm:
@@ -786,7 +848,7 @@ Resources:
         ImageId: !Sub '{{resolve:ssm:${InstanceAmiId}}}'
         IamInstanceProfile:
           Arn: !GetAtt ServiceFabricInstanceProfile.Arn
-        InstanceType: !Ref InstanceType
+        InstanceType: !Ref ServerInstanceType
         KeyName: !If [HasKeyName, !Ref KeyPairName, !Ref "AWS::NoValue"]
         SecurityGroupIds:
           - !GetAtt ServiceFabricSecurityGroup.GroupId
@@ -813,19 +875,38 @@ Resources:
 
             if [ $init_exit_code -eq 0 ]; then
               lifecycle_action="CONTINUE"
+              hook_status="SUCCESS"
             else
               lifecycle_action="ABANDON"
+              hook_status="FAILURE"
             fi
             metadata_token=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 300")
             instance_id=$(curl -H "X-aws-ec2-metadata-token: $metadata_token" -s http://169.254.169.254/latest/meta-data/instance-id)
             asg_name=$(/usr/local/bin/aws autoscaling describe-auto-scaling-instances --instance-ids "$instance_id" --query 'AutoScalingInstances[*].AutoScalingGroupName' --output text)
+            
+            generate_put_data()
+            {
+              cat <<EOF
+            {
+              "Status": "$hook_status",
+              "Reason": "Configuration $hook_status",
+              "UniqueId": "$instance_id",
+              "Data": "Configuration $hook_status. Instance: $instance_id"
+            }
+            EOF
+            }
+
+            curl -X PUT \
+              -H 'Content-Type:' --data "$(generate_put_data)" \
+              "${WaitForNodesHandle}"
+            
             /usr/local/bin/aws autoscaling complete-lifecycle-action --lifecycle-action-result "$lifecycle_action" \
                                                                      --lifecycle-hook-name ${AWS::StackName}-ServerInstallFinishedHook \
                                                                      --auto-scaling-group-name "$asg_name" \
                                                                      --instance-id "$instance_id"
+            echo "***************Finished***************"
   AgentLaunchConfiguration:
     Type: 'AWS::EC2::LaunchTemplate'
-    Condition: IsMultiNode
     Metadata:
       AWS::CloudFormation::Authentication:
         S3AccessCreds:
@@ -895,7 +976,12 @@ Resources:
             /root/download-sf-installer.sh:
               content: !Sub |
                 #!/bin/bash -x
-                wget "$(/usr/local/bin/aws ssm get-parameter --name "${InstallerDownloadUrlParameterName}" | jq -r '.Parameter.Value')" -O /root/sf-installer.zip
+                URL="$(/usr/local/bin/aws ssm get-parameter --name "${InstallerDownloadUrlParameterName}" | jq -r '.Parameter.Value')"
+                if [ "$URL" == "marketplace" ]; then
+                  echo "NoASPackageDownload"
+                else
+                  wget "$URL" -O /root/sf-installer.zip
+                fi
               owner: "root"
               group: "root"
               mode: "00700"
@@ -915,6 +1001,8 @@ Resources:
               command: chmod -R +r,+w,+x /root/installer/*
             04_download_input:
               command: !Sub /usr/local/bin/aws secretsmanager get-secret-value --secret-id "${InputJsonSecretArn}" | jq '.SecretString | fromjson' > /root/installer/input.json
+            05_set_rp_filter:
+              command: sysctl -w net.ipv4.conf.all.rp_filter=0 && sudo echo 'net.ipv4.conf.all.rp_filter=0' >>  /etc/sysctl.conf
         install_agent:
           files:
             /root/install-agent.sh:
@@ -1000,7 +1088,7 @@ Resources:
         ImageId: !Sub '{{resolve:ssm:${InstanceAmiId}}}'
         IamInstanceProfile:
           Arn: !GetAtt ServiceFabricInstanceProfile.Arn
-        InstanceType: !Ref InstanceType
+        InstanceType: !Ref AgentInstanceType
         KeyName: !If [HasKeyName, !Ref KeyPairName, !Ref "AWS::NoValue"]
         SecurityGroupIds:
           - !GetAtt ServiceFabricSecurityGroup.GroupId
@@ -1037,6 +1125,7 @@ Resources:
                                                                      --instance-id "$instance_id"
   ASRobotsLaunchTemplate:
     Type: 'AWS::EC2::LaunchTemplate'
+    Condition: IsASRobotsProduction
     Metadata:
       AWS::CloudFormation::Authentication:
         S3AccessCreds:
@@ -1102,7 +1191,12 @@ Resources:
             /root/download-sf-installer.sh:
               content: !Sub |
                 #!/bin/bash -x
-                wget "$(/usr/local/bin/aws ssm get-parameter --name "${InstallerDownloadUrlParameterName}" | jq -r '.Parameter.Value')" -O /root/sf-installer.zip
+                URL="$(/usr/local/bin/aws ssm get-parameter --name "${InstallerDownloadUrlParameterName}" | jq -r '.Parameter.Value')"
+                if [ "$URL" == "marketplace" ]; then
+                  echo "NoASPackageDownload"
+                else
+                  wget "$URL" -O /root/sf-installer.zip
+                fi
               owner: "root"
               group: "root"
               mode: "00700"
@@ -1122,6 +1216,8 @@ Resources:
               command: chmod -R +r,+w,+x /root/installer/*
             04_download_input:
               command: !Sub /usr/local/bin/aws secretsmanager get-secret-value --secret-id "${InputJsonSecretArn}" | jq '.SecretString | fromjson' > /root/installer/input.json
+            05_set_rp_filter:
+              command: sysctl -w net.ipv4.conf.all.rp_filter=0 && sudo echo 'net.ipv4.conf.all.rp_filter=0' >>  /etc/sysctl.conf
         install_agent:
           files:
             /root/install-agent.sh:
@@ -1244,7 +1340,6 @@ Resources:
                                                                      --instance-id "$instance_id"
   AgentAutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
-    Condition: IsMultiNode
     CreationPolicy:
       ResourceSignal:
         Count: !Ref AgentInstanceCount
@@ -1274,6 +1369,14 @@ Resources:
       TargetGroupARNs:
         - !Ref DeploymentTargetGroupArn
       VPCZoneIdentifier: !Ref PrivateSubnetIDs
+  WaitForNodesHandle:
+    Type: 'AWS::CloudFormation::WaitConditionHandle'
+  WaitForNodesCondition:
+    Type: 'AWS::CloudFormation::WaitCondition'
+    Properties:
+      Count: !Ref ServerInstanceCount
+      Handle: !Ref WaitForNodesHandle
+      Timeout: '7200'
   ServerAutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     CreationPolicy:
@@ -1309,19 +1412,20 @@ Resources:
       VPCZoneIdentifier: !Ref PrivateSubnetIDs
   ASRobotsAutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Condition: IsASRobotsProduction
     CreationPolicy:
       ResourceSignal:
-        Count: !If [IsASRobotsProduction, '1', '0']
+        Count: !Ref ASRobotsInstanceCount
         Timeout: PT2H
     Properties:
-      DesiredCapacity: !If [IsASRobotsProduction, '1', '0']
+      DesiredCapacity: !Ref ASRobotsInstanceCount
       HealthCheckType: EC2
       LaunchTemplate:
         LaunchTemplateId: !Ref ASRobotsLaunchTemplate
         Version: !GetAtt
           - ASRobotsLaunchTemplate
           - LatestVersionNumber
-      MaxSize: !If [IsASRobotsProduction, '1', '0']
+      MaxSize: !Ref ASRobotsInstanceCount
       MetricsCollection:
         - Granularity: 1Minute
           Metrics:
@@ -1330,7 +1434,7 @@ Resources:
             - GroupDesiredCapacity
             - GroupInServiceInstances
             - GroupTotalInstances
-      MinSize: !If [IsASRobotsProduction, '1', '0']
+      MinSize: !Ref ASRobotsInstanceCount
       Tags:
         - Key: Name
           PropagateAtLaunch: true
@@ -1340,6 +1444,7 @@ Resources:
       VPCZoneIdentifier: !Ref PrivateSubnetIDs
   ASRobotsAsgLifeCycleHookLaunching:
     Type: "AWS::AutoScaling::LifecycleHook"
+    Condition: IsASRobotsProduction
     Properties:
       LifecycleHookName: !Sub "${AWS::StackName}-ASRobotsInstallFinishedHook"
       AutoScalingGroupName: !Ref ASRobotsAutoScalingGroup
@@ -1348,7 +1453,6 @@ Resources:
       DefaultResult: ABANDON
   AgentAsgLifeCycleHookLaunching:
     Type: "AWS::AutoScaling::LifecycleHook"
-    Condition: IsMultiNode
     Properties:
       LifecycleHookName: !Sub "${AWS::StackName}-AgentInstallFinishedHook"
       AutoScalingGroupName: !Ref AgentAutoScalingGroup
@@ -1357,6 +1461,7 @@ Resources:
       DefaultResult: ABANDON
   ServerAsgLifeCycleHookLaunching:
     Type: "AWS::AutoScaling::LifecycleHook"
+    DependsOn: WaitForNodesCondition
     Properties:
       LifecycleHookName: !Sub "${AWS::StackName}-ServerInstallFinishedHook"
       AutoScalingGroupName: !Ref ServerAutoScalingGroup
@@ -1416,7 +1521,7 @@ Resources:
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/PatchAsg/lambda.zip'
       Handler: lambda_function.handler
       Role: !If [DeployIam, !GetAtt AsgProcessModificationRole.Arn, !Ref IamRoleArn]
-      Runtime: python3.9
+      Runtime: python3.11
       Timeout: 30
   ModifyAsg:
     Type: 'Custom::ModifyAsg'
@@ -1603,7 +1708,12 @@ Resources:
             /root/download-sf-installer.sh:
               content: !Sub |
                 #!/bin/bash -x
-                wget "$(/usr/local/bin/aws ssm get-parameter --name "${InstallerDownloadUrlParameterName}" | jq -r '.Parameter.Value')" -O /root/sf-installer.zip
+                URL="$(/usr/local/bin/aws ssm get-parameter --name "${InstallerDownloadUrlParameterName}" | jq -r '.Parameter.Value')"
+                if [ "$URL" == "marketplace" ]; then
+                  echo "NoASPackageDownload"
+                else
+                  wget "$URL" -O /root/sf-installer.zip
+                fi
               owner: "root"
               group: "root"
               mode: "00700"
@@ -1623,6 +1733,8 @@ Resources:
               command: chmod -R +r,+w,+x /root/installer/*
             04_download_input:
               command: !Sub /usr/local/bin/aws secretsmanager get-secret-value --secret-id "${InputJsonSecretArn}" | jq '.SecretString | fromjson' > /root/installer/input.json
+            05_set_rp_filter:
+              command: sysctl -w net.ipv4.conf.all.rp_filter=0 && sudo echo 'net.ipv4.conf.all.rp_filter=0' >>  /etc/sysctl.conf
         install_tm:
           files:
             /root/install-agent.sh:
@@ -1855,7 +1967,12 @@ Resources:
             /root/download-sf-installer.sh:
               content: !Sub |
                 #!/bin/bash -x
-                wget "$(/usr/local/bin/aws ssm get-parameter --name "${InstallerDownloadUrlParameterName}" | jq -r '.Parameter.Value')" -O /root/sf-installer.zip
+                URL="$(/usr/local/bin/aws ssm get-parameter --name "${InstallerDownloadUrlParameterName}" | jq -r '.Parameter.Value')"
+                if [ "$URL" == "marketplace" ]; then
+                  echo "NoASPackageDownload"
+                else
+                  wget "$URL" -O /root/sf-installer.zip
+                fi
               owner: "root"
               group: "root"
               mode: "00700"
@@ -1875,6 +1992,8 @@ Resources:
               command: chmod -R +r,+w,+x /root/installer/*
             04_download_input:
               command: !Sub /usr/local/bin/aws secretsmanager get-secret-value --secret-id "${InputJsonSecretArn}" | jq '.SecretString | fromjson' > /root/installer/input.json
+            05_set_rp_filter:
+              command: sysctl -w net.ipv4.conf.all.rp_filter=0 && sudo echo 'net.ipv4.conf.all.rp_filter=0' >>  /etc/sysctl.conf
         install_gpu_drivers:
           files:
             /opt/uipath/install-gpu.sh:
@@ -1944,7 +2063,7 @@ Resources:
         Timeout: PT1H
     Properties:
       IamInstanceProfile: !Ref ServiceFabricInstanceProfile
-      ImageId: !If [FindingGpuAmiAtDeploy, !GetAtt GpuInstanceAMI.ImageId, !Ref GpuAmiId]
+      ImageId: !If [FindingGpuAmiAtDeploy, !If [IsCommercialCloud, !GetAtt GpuInstanceAMICommercial.ImageId, !GetAtt GpuInstanceAMIGov.ImageId], !Ref GpuAmiId]
       InstanceType: !Ref GpuInstanceType
       KeyName: !If [HasKeyName, !Ref KeyPairName, !Ref "AWS::NoValue"]
       BlockDeviceMappings:
@@ -1994,13 +2113,13 @@ Outputs:
     Value: !Ref InstanceAmiId
   AgentAsgName:
     Description: Agent AutoScalingGroup name
-    Value: !If [IsMultiNode, !Ref AgentAutoScalingGroup, '']
+    Value: !Ref AgentAutoScalingGroup
   ServerAsgName:
     Description: Server AutoScalingGroup name
     Value: !Ref ServerAutoScalingGroup
   AsRobotsAsgName:
     Description: AS Robots AutoScalingGroup name
-    Value: !Ref ASRobotsAutoScalingGroup
+    Value: !If [IsASRobotsProduction, !Ref ASRobotsAutoScalingGroup, '']
   GpuAgentInstanceId:
     Description: Instance ID of the dedicated GPU node
     Value: !If [DeployingGpu, !Ref GpuEnabledNode, '']
@@ -2012,10 +2131,10 @@ Outputs:
     Value: !Ref ServerLaunchConfiguration
   AgentLaunchTemplateName:
     Description: Agent AutoScalingGroup Launch Template name
-    Value: !If [IsMultiNode, !Ref AgentLaunchConfiguration, '']
+    Value: !Ref AgentLaunchConfiguration
   ASRobotsLaunchTemplateName:
     Description: AS robots agent AutoScalingGroup Launch Template name
-    Value: !Ref ASRobotsLaunchTemplate
+    Value: !If [IsASRobotsProduction, !Ref ASRobotsLaunchTemplate, '']
   InstanceIamRoleArn:
     Description: Iam Role used by deployed EC2 instamces
     Value: !If [DeployIam, !GetAtt ServiceFabricIamRole.Arn, !Ref IamRoleArn]
