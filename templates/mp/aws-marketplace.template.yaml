@@ -725,7 +725,7 @@ Mappings:
 Conditions:
   UsingDefaultBucket: !Equals
     - !Ref QSS3BucketName
-    - quickstart-uipath-automation-suite/
+    - aws-ia
   3AZCondition: !Equals
     - !Ref NumberOfAZs
     - '3'
