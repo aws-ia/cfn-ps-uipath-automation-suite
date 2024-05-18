@@ -41,3 +41,15 @@ tests:
       UseLevel7LoadBalancer: 'ALB'
       UiPathVersion: "2022.10.2"
       AcceptLicenseAgreement: 'true'
+  # single-node-alb-core-mp:
+  #   template: ./templates/mp/aws-marketplace.template.yaml
+  #   regions:
+  #     - us-east-2
+  #   parameters:
+  #     AvailabilityZones: "$[taskcat_getaz_3]"
+  #     NumberOfAZs: 3
+  #     UiPathFQDN: "$[taskcat_random-string]-override"
+  #     MultiNode: "Single Node"
+  #     UseLevel7LoadBalancer: 'ALB'
+  #     UiPathVersion: "2023.10.1"
+  #     AcceptLicenseAgreement: 'true'
